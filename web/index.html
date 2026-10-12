@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VibePainting · 局部补全工作台</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="masthead"><a class="brand" href="/" aria-label="VibePainting 首页"><span class="brand-mark">v<span>p</span></span>VibePainting</a><span class="edition">局部补全工作台</span><span class="connection" id="connection">正在连接…</span></header>
+  <main>
+    <div class="heading"><div><p class="eyebrow">画面由你决定</p><h1>涂出下一种可能。</h1></div><p class="intro">画几笔，再标记想补全的区域。<br>用一句描述，让画面接着生长。</p></div>
+    <div class="workspace">
+      <section class="editor" aria-label="图像与遮罩编辑器">
+        <div class="editor-heading"><div><strong>画布</strong><span id="image-info">尚未载入图片</span></div><label class="button upload-label" for="file-input">＋ 选择图片</label><input id="file-input" type="file" accept="image/png,image/jpeg,image/webp" hidden></div>
+        <div class="edit-modes" role="group" aria-label="编辑模式">
+          <button id="edit-image" class="edit-mode" aria-pressed="false" disabled><span class="mode-dot paint-dot"></span>绘制图像 <kbd>P</kbd></button>
+          <button id="edit-mask" class="edit-mode active" aria-pressed="true" disabled><span class="mode-dot mask-dot"></span>补全遮罩 <kbd>M</kbd></button>
+          <span id="edit-hint">标记需要 AI 重绘的区域</span>
+        </div>
+        <div class="toolbar">
+          <div class="tool-group"><button id="brush" class="tool active" aria-pressed="true" disabled>画笔 <kbd>B</kbd></button><button id="eraser" class="tool" aria-pressed="false" disabled><span id="eraser-label">橡皮</span> <kbd>E</kbd></button><button id="eyedropper" class="tool" aria-pressed="false" disabled hidden>吸管 <kbd>I</kbd></button></div>
+          <label class="brush-size">大小 <input id="brush-size" type="range" min="1" max="200" value="48" aria-label="笔刷大小" disabled><output id="brush-value">48 px</output></label>
+          <div class="history"><button id="undo" class="quiet" title="撤销（Ctrl+Z）" disabled>撤销</button><button id="redo" class="quiet" title="重做（Ctrl+Shift+Z / Ctrl+Y）" disabled>重做</button><button id="clear" class="quiet" disabled>清空遮罩</button></div>
+        </div>
+        <div class="paint-colors" id="paint-colors" hidden>
+          <label class="color-picker">颜色 <input type="color" id="paint-color" value="#f59e42" aria-label="画笔颜色" disabled><output id="color-value">#F59E42</output></label>
+          <div class="swatches" role="group" aria-label="常用画笔颜色">
+            <button class="swatch" data-color="#213849" style="--swatch:#213849" aria-label="深蓝灰" aria-pressed="false" disabled></button>
+            <button class="swatch" data-color="#ffffff" style="--swatch:#ffffff" aria-label="白色" aria-pressed="false" disabled></button>
+            <button class="swatch active" data-color="#f59e42" style="--swatch:#f59e42" aria-label="橙色" aria-pressed="true" disabled></button>
+            <button class="swatch" data-color="#e56378" style="--swatch:#e56378" aria-label="珊瑚红" aria-pressed="false" disabled></button>
+            <button class="swatch" data-color="#4c9b7a" style="--swatch:#4c9b7a" aria-label="绿色" aria-pressed="false" disabled></button>
+            <button class="swatch" data-color="#5b9ed6" style="--swatch:#5b9ed6" aria-label="蓝色" aria-pressed="false" disabled></button>
+          </div>
+        </div>
+        <div class="stage" id="stage">
+          <div id="empty" class="empty"><div class="empty-art"><span></span><i></i></div><h2>从一张图片开始</h2><p>拖入图片，或点击上方「选择图片」<br><small>PNG、JPEG、WebP · 最大 1600 万像素</small></p></div>
+          <div id="canvas-stack" hidden><canvas id="image-canvas" aria-label="当前编辑的图片"></canvas><canvas id="mask-canvas" aria-label="用鼠标绘制遮罩，按 B 切换画笔，按 E 切换橡皮"></canvas><div id="cursor" hidden></div></div>
+        </div>
+        <p class="canvas-help" id="canvas-help">粉色区域将被重新生成；遮罩之外保留当前画面。</p>
+        <div class="canvas-footer"><label><input type="checkbox" id="show-mask" checked> 显示遮罩</label><div class="canvas-exports"><button class="quiet" id="save-image" disabled>导出画布</button><button class="quiet" id="save-mask" disabled>导出遮罩</button></div></div>
+      </section>
+      <aside class="sidebar">
+        <form id="generate-form">
+          <label for="model" class="field-label">补全模型</label>
+          <select id="model" aria-describedby="model-description" disabled><option>正在读取模型…</option></select>
+          <p class="hint model-description" id="model-description">正在检查本地可用模型。</p>
+          <div class="panel-heading"><span class="step-dot"></span><h2>补全描述</h2></div>
+          <label for="prompt" class="field-label">希望这里出现什么？（可选）</label>
+          <textarea id="prompt" rows="4" maxlength="4000" placeholder="例如：a small wooden cabin surrounded by flowers, warm sunlight"></textarea>
+          <p class="hint" id="prompt-hint">可留空，让模型根据画面尝试补全；需要指定内容时，建议用英文描述。</p>
+          <details id="generation-parameters"><summary>生成参数 <span>可调整</span></summary>
+            <div class="advanced">
+              <label>重绘强度 <input id="strength" type="number" min="0.01" max="1" step="0.01" value="1" required></label>
+              <label>推理步数 <input id="steps" type="number" min="1" max="30" step="1" value="2" required></label>
+              <label>提示词引导 <input id="guidance" type="number" min="0" max="20" step="0.1" value="0" required></label>
+              <label>结构约束 <input id="control" type="number" min="0" max="2" step="0.05" value="0.3" required></label>
+              <label class="wide">随机种子 <input id="seed" type="number" min="0" max="4294967295" step="1" placeholder="留空，每次随机"></label>
+              <label class="wide">负面提示词 <textarea id="negative" rows="2" maxlength="4000">low quality, bad anatomy, blurry</textarea></label>
+              <p class="hint wide" id="parameter-hint">当前 2-step 模型默认使用 2 步、引导 0。引导大于 1 时，负面提示词才生效。</p>
+            </div>
+          </details>
+          <button class="generate" id="generate" type="submit" disabled><span id="generate-label">生成补全</span><span aria-hidden="true">↗</span></button>
+          <p class="load-note">首次生成或切换模型后需要加载，请耐心等待。</p>
+        </form>
+        <section class="result-panel" aria-label="生成结果">
+          <div class="panel-heading"><h2>生成结果</h2><span id="result-meta">等待生成</span></div>
+          <div class="result-frame" id="result-frame"><p id="result-empty">补全后的画面会出现在这里</p><img id="result-image" alt="生成的补全图片" hidden></div>
+          <p class="result-seed" id="result-seed"></p>
+          <div class="result-actions"><button id="compare" disabled>按住看原图</button><button id="download" disabled>下载图片 ↓</button></div>
+          <button class="use-result" id="use-result" disabled>用此结果继续编辑</button>
+        </section>
+      </aside>
+    </div>
+    <div class="status-bar" id="status-bar" role="status" aria-live="polite"><span id="status-dot"></span><span id="status">选择一张图片，开始绘制补全区域。</span></div>
+    <footer><span>VibePainting / Inpainting lab</span><span>遮罩之外，保留原样。</span></footer>
+  </main>
+  <script src="/app.js" defer></script>
+</body>
+</html>

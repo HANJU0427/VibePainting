@@ -1,0 +1,56 @@
+# Local environments, editors, credentials and agent settings
+.venv/
+venv/
+env/
+.idea/
+.vscode/
+.claude/
+.codex/
+.agents/
+.aws/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials*.json
+*token*.json
+
+# Python and optional browser-test dependencies
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+*.egg-info/
+build/
+dist/
+node_modules/
+playwright-report/
+test-results/
+
+# Downloaded models, runtime logs and experiment output
+/models/
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+*.onnx
+*.partial
+*.chunks/
+/logs/
+/test_artifacts/
+/experiments/*/
+*.log
+
+# Local source images / generated outputs; keep two intentional test samples
+/*.png
+/*.jpg
+/*.jpeg
+/*.webp
+!output_img2img_7513.png
+!output_landscape.png
+/STATUS.md
+/=*
+
+.DS_Store
+Thumbs.db
